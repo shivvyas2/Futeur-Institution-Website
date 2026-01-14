@@ -105,7 +105,7 @@ const ContactForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = `mailto:contact@futeurcredx.com?subject=Contact from ${formData.firstName} ${formData.lastName} at ${formData.companyName}&body=${formData.message}`;
+    window.location.href = `mailto:help.lumiq@futeurcredx.com?subject=Contact from ${formData.firstName} ${formData.lastName} at ${formData.companyName}&body=${formData.message}`;
   };
 
   return (
@@ -255,10 +255,10 @@ const HeroSection = () => {
               
               <p className="text-[#6A6A6A] text-sm">
                 Already signed up?{' '}
-                <a href="https://app.lumiqai.com/login" className="text-[#C9A962] underline hover:text-white transition-colors">
+                <a href="https://www.futeurcredx.com/login" className="text-[#C9A962] underline hover:text-white transition-colors">
                   Log into the platform.
                 </a>
-                {' '}Reach out to support@lumiqai.com if you're having trouble logging in.
+                {' '}Reach out to help.lumiq@futeurcredx.com if you're having trouble logging in.
               </p>
             </motion.div>
 
@@ -323,7 +323,7 @@ const FAQSection = () => {
           </h2>
           <p className="text-[#7A7A7A]">
             Still have questions?{' '}
-            <a href="mailto:contact@futeurcredx.com" className="text-[#C9A962] hover:underline">
+            <a href="mailto:help.lumiq@futeurcredx.com" className="text-[#C9A962] hover:underline">
               Contact us directly.
             </a>
           </p>
