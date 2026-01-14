@@ -91,7 +91,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }: {
   );
 };
 
-// Contact Form Component - Crux Style
+// Contact Form Component - Crux Style with Web3Forms
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -102,19 +102,95 @@ const ContactForm = () => {
     inquiryType: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    window.location.href = `mailto:help.lumiq@futeurcredx.com?subject=Contact from ${formData.firstName} ${formData.lastName} at ${formData.companyName}&body=${formData.message}`;
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setErrorMessage('');
+
+    const form = e.currentTarget;
+    const formDataToSend = new FormData(form);
+    formDataToSend.append("access_key", "215dd77a-4e79-424d-bf1d-d45da4631775");
+    
+    // Add the inquiry type label for better readability in emails
+    const inquiryLabel = inquiryOptions.find(opt => opt.value === formData.inquiryType)?.label || formData.inquiryType;
+    formDataToSend.set("inquiry_type", inquiryLabel);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formDataToSend
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitStatus('success');
+        // Reset form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          companyName: '',
+          companyWebsite: '',
+          inquiryType: '',
+          message: ''
+        });
+      } else {
+        setSubmitStatus('error');
+        setErrorMessage(data.message || 'Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      setSubmitStatus('error');
+      setErrorMessage('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  // Show success message
+  if (submitStatus === 'success') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-12"
+      >
+        <div className="w-16 h-16 bg-[#C9A962]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-[#C9A962]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-medium text-white mb-3">Thank you!</h3>
+        <p className="text-[#9A9A9A] mb-6">
+          Your message has been received. Our team will get back to you within 24-48 hours.
+        </p>
+        <Button
+          onClick={() => setSubmitStatus('idle')}
+          className="bg-[#1A1A1A] text-white hover:bg-[#2A2A2A] border border-[#3A3A3A]"
+        >
+          Send another message
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Hidden fields for Web3Forms */}
+      <input type="hidden" name="subject" value={`New Contact from ${formData.firstName} ${formData.lastName} at ${formData.companyName}`} />
+      <input type="hidden" name="from_name" value="LumiqAI Contact Form" />
+      
       {/* First Name */}
       <div>
         <label className="block text-sm text-[#9A9A9A] mb-2">First name*</label>
         <Input
           required
+          name="first_name"
           value={formData.firstName}
           onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
           className="bg-[#1A1A1A] border-[#2A2A2A] text-white placeholder:text-[#5A5A5A] focus:border-[#C9A962] focus:ring-0 h-12 rounded-md"
@@ -126,6 +202,7 @@ const ContactForm = () => {
         <label className="block text-sm text-[#9A9A9A] mb-2">Last name*</label>
         <Input
           required
+          name="last_name"
           value={formData.lastName}
           onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
           className="bg-[#1A1A1A] border-[#2A2A2A] text-white placeholder:text-[#5A5A5A] focus:border-[#C9A962] focus:ring-0 h-12 rounded-md"
@@ -138,6 +215,7 @@ const ContactForm = () => {
         <Input
           required
           type="email"
+          name="email"
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="bg-[#1A1A1A] border-[#2A2A2A] text-white placeholder:text-[#5A5A5A] focus:border-[#C9A962] focus:ring-0 h-12 rounded-md"
@@ -149,6 +227,7 @@ const ContactForm = () => {
         <label className="block text-sm text-[#9A9A9A] mb-2">Company name*</label>
         <Input
           required
+          name="company_name"
           placeholder="Please enter"
           value={formData.companyName}
           onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
@@ -161,6 +240,7 @@ const ContactForm = () => {
         <label className="block text-sm text-[#9A9A9A] mb-2">Company Website*</label>
         <Input
           required
+          name="company_website"
           placeholder="https://"
           value={formData.companyWebsite}
           onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })}
@@ -192,12 +272,15 @@ const ContactForm = () => {
             </div>
           ))}
         </RadioGroup>
+        {/* Hidden input to send inquiry type value */}
+        <input type="hidden" name="inquiry_type" value={formData.inquiryType} />
       </div>
 
       {/* Message */}
       <div>
         <label className="block text-sm text-[#9A9A9A] mb-2">Anything else you want us to know?</label>
         <Textarea
+          name="message"
           placeholder="Tell us about your needs..."
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -205,13 +288,37 @@ const ContactForm = () => {
         />
       </div>
 
+      {/* Error Message */}
+      {submitStatus === 'error' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-500/10 border border-red-500/30 rounded-md p-4"
+        >
+          <p className="text-red-400 text-sm">{errorMessage}</p>
+        </motion.div>
+      )}
+
       {/* Submit Button */}
       <Button 
         type="submit" 
-        className="w-full bg-white text-black hover:bg-[#E5E5E5] h-12 rounded-md font-medium text-sm transition-colors"
+        disabled={isSubmitting}
+        className="w-full bg-white text-black hover:bg-[#E5E5E5] h-12 rounded-md font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Submit
-        <ArrowRight className="ml-2 h-4 w-4" />
+        {isSubmitting ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Sending...
+          </>
+        ) : (
+          <>
+            Submit
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        )}
       </Button>
 
       <p className="text-xs text-[#6A6A6A] pt-2">
